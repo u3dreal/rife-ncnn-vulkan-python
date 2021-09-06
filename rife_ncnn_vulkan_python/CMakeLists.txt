@@ -245,7 +245,7 @@ if(USE_STATIC_MOLTENVK)
     )
 endif()
 
-target_link_libraries(rife-ncnn-vulkan ${RIFE_LINK_LIBRARIES})
+#target_link_libraries(rife-ncnn-vulkan ${RIFE_LINK_LIBRARIES})
 
 set(UseSWIG_TARGET_NAME_PREFERENCE STANDARD)
 set_property(SOURCE rife.i PROPERTY CPLUSPLUS ON DEPENDS generate-spirv)
