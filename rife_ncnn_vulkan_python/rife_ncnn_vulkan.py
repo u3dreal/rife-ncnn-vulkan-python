@@ -29,9 +29,10 @@ class Rife:
     def __init__(
         self,
         gpuid: int = -1,
-        model: str = "rife-HD",
+        model: str = "rife-v2.3",
         scale: int = 2,
         tta_mode: bool = False,
+        tta_temporal_mode: bool = False,
         uhd_mode: bool = False,
         num_threads: int = 1,
     ):
@@ -43,10 +44,11 @@ class Rife:
 
         # determine if rife-v2 is used
         rife_v2 = ("rife-v2" in model) or ("rife-v3" in model)
+        rife_v4 = "rife-v4" in model
 
         # create raw RIFE wrapper object
         self._rife_object = wrapped.RifeWrapped(
-            gpuid, tta_mode, uhd_mode, num_threads, rife_v2
+            gpuid, tta_mode, tta_temporal_mode, uhd_mode, num_threads, rife_v2, rife_v4
         )
         self._load(model)
 
@@ -74,7 +76,15 @@ class Rife:
         else:
             raise FileNotFoundError(f"{model_dir} not found")
 
-    def process(self, image0: Image, image1: Image) -> Image:
+    def process(self, image0: Image, image1: Image, timestep: float = 0.5) -> Image:
+        # Return the image immediately instead of doing the copy in the upstream part which cause black output problems
+        # The reason is that the upstream code use ncnn::Mat::operator=(const Mat& m) does a reference copy which won't
+        # change our OutImage data.
+        if timestep == 0.:
+            return image0
+        elif timestep == 1.:
+            return image1
+
         image0_bytes = bytearray(image0.tobytes())
         image1_bytes = bytearray(image1.tobytes())
         channels = int(len(image0_bytes) / (image0.width * image0.height))
@@ -91,8 +101,11 @@ class Rife:
             output_bytes, image0.width, image0.height, channels
         )
 
-        self._rife_object.process(raw_in_image0, raw_in_image1, 0.5, raw_out_image)
-
+        self._rife_object.process(raw_in_image0, raw_in_image1, timestep, raw_out_image)
         return Image.frombytes(
             image0.mode, (image0.width, image0.height), bytes(output_bytes)
         )
+
+
+class RIFE(Rife):
+    ...
