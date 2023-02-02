@@ -138,7 +138,6 @@ jobs:
           python --version
       - name: Install dependencies
         run: |
-          brew install libomp
           pip install build
       - name: Build
         run: |
